@@ -1,0 +1,80 @@
+name: spotimy
+services:
+  jellyfin:
+    container_name: jellyfin
+    image: ghcr.io/jellyfin/jellyfin:10.10.3@sha256:8d6a97e97d28298789fc6f997760a2ed5959d4136f61ba13667167fe5d41611b
+    restart: unless-stopped
+    user: "${UID}:${GID}" # Remplacez par vos ID d'utilisateur et de groupe si nécessaire
+    environment:
+      - TZ=Europe/Paris # Configure le fuseau horaire
+    ports:
+      - 8041:8096 # Port pour accéder à Jellyfin
+    volumes:
+        - jellyfin_config:/config # Volume pour stocker la configuration
+        - jellyfin_cache:/cache   # Volume pour le cache
+        - /mnt/jellyfin:/media # Dossier local pour vos fichiers multimédias
+    depends_on:
+      filebrowser:
+        condition: service_healthy
+        restart: true
+
+  filebrowser:
+    container_name: filebrowser
+    image: filebrowser/filebrowser:latest
+    restart: unless-stopped
+    ports:
+      - "8031:80"  # Port d'accès à File Browser
+    volumes:
+      - /mnt/jellyfin:/srv # Dossier à gérer via l'interface web
+      - filebrowser_data:/database # Volume pour stocker les données de configuration
+    environment:
+      - FB_BASEURL=/ # Chemin de base pour l'accès (changeable si nécessaire)
+
+  metube:
+    container_name: metube_container
+    image: ghcr.io/alexta69/metube:2024-04-10@sha256:9c30ac3f195e59465b14af1a56ac4edb24841d4fcb38d96eea1d615ae0560a6a
+    restart: unless-stopped
+    environment: 
+      - UID="${UID}"
+      - GID="${GID}"
+    ports:
+      - 8021:8081
+    volumes:
+      - /mnt/jellyfin:/downloads
+
+  qbittorrent-nox:
+    # for debugging
+    #cap_add:
+      #- SYS_PTRACE
+    container_name: qbittorrent-nox
+    user: "${UID}:${GID}" # Remplacez par vos ID d'utilisateur et de groupe si nécessaire
+    environment:
+      #- PAGID=10000
+      - PGID=${GID}
+      - PUID=${UID}
+      - QBT_LEGAL_NOTICE=${QBT_LEGAL_NOTICE}
+      - QBT_VERSION=${QBT_VERSION}
+      - QBT_WEBUI_PORT=${QBT_WEBUI_PORT}
+      - TZ=Europe/Paris
+      #- UMASK=022
+    image: ghcr.io/qbittorrent/docker-qbittorrent-nox:5.0.2-1@sha256:0f9095991d8156eb3f45d4eee8b81588782b6a2e65e31828cb861925fb3064b1
+    ports:
+      # for bittorrent traffic
+      - 6881:6881/tcp
+      - 6881:6881/udp
+      # for WebUI
+      - ${QBT_WEBUI_PORT}:${QBT_WEBUI_PORT}/tcp
+    read_only: true
+    # stop_grace_period: 30m
+    restart: unless-stopped
+    tmpfs:
+      - /tmp
+    tty: true
+    volumes:
+      - ${QBT_CONFIG_PATH}:/config
+      - ${QBT_DOWNLOADS_PATH}:/downloads
+
+volumes:
+  jellyfin_config:
+  jellyfin_cache:
+  filebrowser_data:
