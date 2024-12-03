@@ -22,7 +22,6 @@ services:
     container_name: filebrowser
     image: filebrowser/filebrowser:latest
     restart: unless-stopped
-    stop_grace_period: 1h
     ports:
       - "8031:80"  # Port d'accès à File Browser
     volumes:
@@ -35,7 +34,6 @@ services:
     container_name: metube_container
     image: ghcr.io/alexta69/metube:2024-04-10@sha256:9c30ac3f195e59465b14af1a56ac4edb24841d4fcb38d96eea1d615ae0560a6a
     restart: unless-stopped
-    stop_grace_period: 1h
     environment: 
       - UID="${UID}"
       - GID="${GID}"
@@ -67,7 +65,6 @@ services:
       # for WebUI
       - ${QBT_WEBUI_PORT}:${QBT_WEBUI_PORT}/tcp
     read_only: true
-    stop_grace_period: 1h
     restart: unless-stopped
     tmpfs:
       - /tmp
