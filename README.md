@@ -1,3 +1,5 @@
+_README not updated_
+
 # Why ?
 
 Ads pissed me off on Spotify so i made a stack to get musics & play it without ads.
